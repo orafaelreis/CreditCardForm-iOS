@@ -8,6 +8,12 @@
 
 import UIKit
 
+@objc public protocol CreditCardFormViewDelegate {
+    @objc func didTouchCardHolder()
+    @objc func didTouchExpireDate()
+    @objc func didTouchCardNumber()
+}
+
 public enum Brands : String {
     case NONE, Visa, UnionPay, MasterCard, Amex, JCB, DEFAULT, Discover
 }
@@ -33,7 +39,10 @@ public class CreditCardFormView : UIView {
     fileprivate var chipImg: UIImageView     = UIImageView(frame: .zero)
     fileprivate var amex                    = false
     
+    public weak var delegate: CreditCardFormViewDelegate?
     public var colors = [String : [UIColor]]()
+    
+    public var onTouchCardHolderText: (() -> Void)?
     
     @IBInspectable
     public var defaultCardColor: UIColor = UIColor.hexStr(hexStr: "363434", alpha: 1) {
@@ -131,6 +140,7 @@ public class CreditCardFormView : UIView {
     
     private func createViews() {
         frontView.isHidden = false
+        frontView.isUserInteractionEnabled = true
         backView.isHidden = true
         cardView.clipsToBounds = true
         
@@ -247,9 +257,9 @@ public class CreditCardFormView : UIView {
         cardNumber.maskExpression = cardNumberMaskExpression
         cardNumber.maskTemplate = cardNumberMaskTemplate
         cardNumber.textColor = cardHolderExpireDateColor
-        cardNumber.isUserInteractionEnabled = false
         cardNumber.textAlignment = NSTextAlignment.center
         cardNumber.font = UIFont(name: "Helvetica Neue", size: cardNumberFontSize)
+        addTapGesture(to: cardNumber, action: #selector(CreditCardFormViewDelegate.didTouchCardNumber))
         frontView.addSubview(cardNumber)
         
         self.addConstraint(NSLayoutConstraint(item: cardNumber, attribute: NSLayoutAttribute.centerX, relatedBy: NSLayoutRelation.equal, toItem: cardView, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: 0.0));
@@ -267,6 +277,7 @@ public class CreditCardFormView : UIView {
         cardHolder.font = UIFont(name: "Helvetica Neue", size: 12)
         cardHolder.textColor = cardHolderExpireDateColor
         cardHolder.text = cardHolderString
+        addTapGesture(to: cardHolder, action: #selector(CreditCardFormViewDelegate.didTouchCardHolder))
         frontView.addSubview(cardHolder)
         
         self.addConstraint(NSLayoutConstraint(item: cardHolder, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: cardView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -20));
@@ -280,6 +291,7 @@ public class CreditCardFormView : UIView {
         cardHolderText.font = UIFont(name: "Helvetica Neue", size: 10)
         cardHolderText.text = cardHolderPlaceholderString
         cardHolderText.textColor = cardHolderExpireDateTextColor
+        addTapGesture(to: cardHolderText, action: #selector(CreditCardFormViewDelegate.didTouchCardHolder))
         frontView.addSubview(cardHolderText)
         
         self.addConstraint(NSLayoutConstraint(item: cardHolderText, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: cardHolder, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: -3));
@@ -295,6 +307,7 @@ public class CreditCardFormView : UIView {
         expireDate.maskExpression = "{..}/{..}"
         expireDate.text = "MM/YY"
         expireDate.textColor = cardHolderExpireDateColor
+        addTapGesture(to: expireDate, action: #selector(CreditCardFormViewDelegate.didTouchExpireDate))
         frontView.addSubview(expireDate)
         
         self.addConstraint(NSLayoutConstraint(item: expireDate, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: cardView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -20));
@@ -308,6 +321,7 @@ public class CreditCardFormView : UIView {
         expireDateText.font = UIFont(name: "Helvetica Neue", size: 10)
         expireDateText.text = expireDatePlaceholderText
         expireDateText.textColor = cardHolderExpireDateTextColor
+        addTapGesture(to: expireDateText, action: #selector(CreditCardFormViewDelegate.didTouchExpireDate))
         frontView.addSubview(expireDateText)
         
         self.addConstraint(NSLayoutConstraint(item: expireDateText, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: expireDate, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: -3));
@@ -472,4 +486,19 @@ extension CreditCardFormView {
     }
 }
 
-
+//: Tap Gestures
+extension CreditCardFormView : UITextFieldDelegate {
+    
+    public func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        return false
+    }
+    
+    fileprivate func addTapGesture(to view: UIView, action: Selector) {
+        if delegate != nil {
+            let tapGesture = UITapGestureRecognizer(target: delegate!, action: action)
+            view.isUserInteractionEnabled = true
+            view.addGestureRecognizer(tapGesture)
+            (view as? UITextField)?.delegate = self
+        }
+    }
+}
