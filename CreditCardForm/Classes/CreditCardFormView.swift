@@ -41,9 +41,7 @@ public class CreditCardFormView : UIView {
     
     public weak var delegate: CreditCardFormViewDelegate?
     public var colors = [String : [UIColor]]()
-    
-    public var onTouchCardHolderText: (() -> Void)?
-    
+        
     @IBInspectable
     public var defaultCardColor: UIColor = UIColor.hexStr(hexStr: "363434", alpha: 1) {
         didSet {
